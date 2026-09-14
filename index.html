@@ -559,7 +559,7 @@
 
   <div class="action-bar">
     <button class="btn btn-primary btn-full" id="btnPdf">🖨️ Gerar PDF / Imprimir</button>
-    <button class="btn btn-wa" id="btnWpp">📲 Enviar por WhatsApp</button>
+    <button class="btn btn-wa" id="btnWpp">📄 Enviar PDF via WhatsApp</button>
     <button class="btn btn-dark" id="btnSave">💾 Salvar orçamento</button>
     <button class="btn btn-approve btn-full" id="btnAprovado">✅ Cliente aprovou o serviço?</button>
     <button class="btn btn-ghost btn-full" id="btnNew">＋ Novo orçamento em branco</button>
@@ -1055,40 +1055,10 @@
 
   els.btnWpp.addEventListener('click', function(){
     var data = collectData();
-    var lines = [];
-    lines.push('*' + (els.oficinaNome.value||'Oficina') + '*');
-    lines.push('Orçamento nº ' + data.numero);
-    if(data.cliNome) lines.push('Cliente: ' + data.cliNome);
-    if(data.veiModelo) lines.push('Veículo: ' + data.veiModelo + (data.veiAno?(' '+data.veiAno):'') + (data.veiPlaca?(' - '+data.veiPlaca):''));
-    lines.push('');
-    if((data.items||[]).some(function(i){return i.desc;})){
-      lines.push('*Serviços:*');
-      (data.items||[]).forEach(function(i){
-        if(!i.desc) return;
-        lines.push('• ' + i.desc + ' (x' + i.qty + ') — ' + fmt(i.qty*i.price));
-      });
-      lines.push('');
-    }
-    if((data.pecas||[]).some(function(i){return i.desc;})){
-      lines.push('*Peças:*');
-      (data.pecas||[]).forEach(function(i){
-        if(!i.desc) return;
-        lines.push('• ' + i.desc + ' (x' + i.qty + ') — ' + fmt(i.qty*i.price));
-      });
-      lines.push('');
-    }
-    var sub = subtotal();
-    if(data.desconto) lines.push('Desconto: ' + fmt(data.desconto));
-    lines.push('*Total: ' + fmt(Math.max(0, sub-data.desconto)) + '*');
-    if(data.validade) lines.push('Válido até: ' + data.validade);
-    if(data.obs) { lines.push(''); lines.push(data.obs); }
-
-    var text = encodeURIComponent(lines.join('\n'));
+    var html = buildOrcamentoPrintHTML(data);
     var phone = (data.cliFone||'').replace(/\D/g,'');
-    var url = phone ? ('https://wa.me/55'+phone+'?text='+text) : ('https://wa.me/?text='+text);
-    if(!kodularOpenUrl(url)){
-      window.open(url, '_blank');
-    }
+    var msg = 'Olá' + (data.cliNome ? ', ' + data.cliNome : '') + '! Segue o orçamento nº ' + (data.numero||'') + ' em PDF.';
+    compartilharPDF(html, 'orcamento-' + (data.numero||'novo') + '.pdf', phone, msg, 'Orçamento');
   });
 
   // ---------- Ordem de Serviço (após aprovação do cliente) ----------
@@ -1124,12 +1094,64 @@
     kodularSend({ action: 'OPENURL', url: url });
     return true;
   }
-  // Pede pro app salvar um HTML como arquivo e abrir o menu de compartilhamento nativo
-  // (o usuário escolhe abrir no Chrome pra imprimir/salvar PDF, ou mandar por WhatsApp etc.)
+  // Pede pro app salvar um HTML como arquivo e abrir o menu de compartilhamento nativo.
   function kodularShareHtml(html, filename){
     if(!isKodularApp()) return false;
     kodularSend({ action: 'SAVEHTML', filename: filename || 'documento.html', html: html });
     return true;
+  }
+
+  // Compartilha o documento como PDF. No Kodular, os Blocks devem tratar SHAREPDF
+  // convertendo o HTML para PDF e abrindo o compartilhamento nativo (WhatsApp etc.).
+  function compartilharPDF(html, filename, phone, message, titulo){
+    if(isKodularApp()){
+      kodularSend({action:'SHAREPDF',filename:filename||'documento.pdf',html:html,phone:phone||'',message:message||'',title:titulo||'Documento PDF'});
+      return true;
+    }
+    try{
+      var text=htmlToPlainText(html);
+      var blob=makeSimplePDF(text,titulo||'Documento');
+      if(navigator.share && navigator.canShare){
+        var file=new File([blob],filename||'documento.pdf',{type:'application/pdf'});
+        if(navigator.canShare({files:[file]})){
+          navigator.share({files:[file],title:titulo||'Documento PDF',text:message||''}).catch(function(err){
+            if(err && err.name!=='AbortError') abrirImpressaoPDF(html);
+          });
+          return true;
+        }
+      }
+      abrirImpressaoPDF(html);
+      return true;
+    }catch(e){ abrirImpressaoPDF(html); return true; }
+  }
+  function abrirImpressaoPDF(html){
+    var w=abrirHTMLSeguro(html);
+    if(w){setTimeout(function(){try{w.alert('Selecione “Salvar como PDF” e depois envie o arquivo pelo WhatsApp.');}catch(e){}},250);}
+  }
+  function abrirHTMLSeguro(html){
+    try{
+      var blob=new Blob([html],{type:'text/html;charset=utf-8'}),url=URL.createObjectURL(blob),w=window.open(url,'_blank');
+      if(!w){URL.revokeObjectURL(url);alert('Não foi possível abrir a nova aba. Verifique o bloqueador de pop-ups.');return null;}
+      setTimeout(function(){try{URL.revokeObjectURL(url);}catch(e){}},60000); return w;
+    }catch(e){
+      var w2=window.open('', '_blank'); if(!w2)return null; w2.document.open();w2.document.write(html);w2.document.close();return w2;
+    }
+  }
+  function htmlToPlainText(html){
+    try{var doc=new DOMParser().parseFromString(html,'text/html');doc.querySelectorAll('script,style,noscript').forEach(function(el){el.remove();});return (doc.body?doc.body.innerText:html).replace(/\u00a0/g,' ').replace(/^[ \t]+|[ \t]+$/gm,'').replace(/\n{3,}/g,'\n\n').trim();}
+    catch(e){return String(html).replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();}
+  }
+  function pdfEscape(s){return String(s).replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)');}
+  function makeSimplePDF(text,title){
+    var lines=String(text||'').split(/\r?\n/),out=[];
+    lines.forEach(function(line){line=String(line).replace(/\s+$/,'');if(!line){out.push('');return;}while(line.length>92){out.push(line.slice(0,92));line=line.slice(92);}out.push(line);});
+    if(!out.length)out=[title||'Documento'];
+    var pages=[];for(var i=0;i<out.length;i+=48)pages.push(out.slice(i,i+48));
+    var objects=[],offsets=[];function add(o){objects.push(o);return objects.length;}
+    var catalogId=add(''),pagesId=add(''),fontId=add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'),pageIds=[];
+    pages.forEach(function(pg){var content='BT\n/F1 10 Tf\n50 800 Td\n14 TL\n';pg.forEach(function(line,idx){if(idx>0)content+='T*\n';var safe=String(line||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\x20-\x7E]/g,'?');content+='('+pdfEscape(safe)+') Tj\n';});content+='ET';var cid=add('<< /Length '+content.length+' >>\nstream\n'+content+'\nendstream');pageIds.push(add('<< /Type /Page /Parent '+pagesId+' 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 '+fontId+' 0 R >> >> /Contents '+cid+' 0 R >>'));});
+    objects[catalogId-1]='<< /Type /Catalog /Pages '+pagesId+' 0 R >>';objects[pagesId-1]='<< /Type /Pages /Kids ['+pageIds.map(function(id){return id+' 0 R';}).join(' ')+'] /Count '+pageIds.length+' >>';
+    var pdf='%PDF-1.4\n%\xFF\xFF\xFF\xFF\n';objects.forEach(function(obj,idx){offsets[idx+1]=pdf.length;pdf+=(idx+1)+' 0 obj\n'+obj+'\nendobj\n';});var xref=pdf.length;pdf+='xref\n0 '+(objects.length+1)+'\n0000000000 65535 f \n';for(var j=1;j<=objects.length;j++)pdf+=String(offsets[j]).padStart(10,'0')+' 00000 n \n';pdf+='trailer\n<< /Size '+(objects.length+1)+' /Root '+catalogId+' 0 R >>\nstartxref\n'+xref+'\n%%EOF';return new Blob([pdf],{type:'application/pdf'});
   }
 
   function buildOSRowsHTML(list){
@@ -1186,6 +1208,7 @@
     '.no-print{display:flex;gap:8px;justify-content:flex-end;margin-bottom:14px;}' +
     '.no-print button{padding:11px 18px;border:none;border-radius:10px;font-weight:700;font-size:13.5px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.12);}' +
     '.btn-print{background:linear-gradient(135deg,#CB9C61,#B5824A);color:#fff;}' +
+    '.btn-wa{background:linear-gradient(135deg,#2CB47F,#1E7A57);color:#fff;}' +
     '.btn-close{background:#fff;border:1px solid var(--line) !important;color:var(--graphite-900);}' +
     '.sheet{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 12px 30px -10px rgba(18,24,29,.18);}' +
     '.head{background:linear-gradient(135deg,var(--graphite-900),var(--graphite-800));color:#fff;padding:20px 22px;}' +
@@ -1213,7 +1236,8 @@
     '</style></head><body>' +
     '<div class="wrap">' +
       '<div class="no-print">' +
-        '<button class="btn-print" onclick="window.print()">🖨️ Imprimir</button>' +
+        '<button class="btn-wa" onclick="enviarChecklistPDF()">📄 Enviar PDF via WhatsApp</button>' +
+        '<button class="btn-print" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>' +
         '<button class="btn-close" onclick="window.close()">Fechar aba</button>' +
       '</div>' +
       '<div class="sheet">' +
@@ -1342,6 +1366,12 @@
         'var vt=q("ventoinha").value; q("refVentoinhaTexto").textContent = ventoinhaNotes[vt] || "";' +
         'var ct=q("compressorTipo").value; q("refCompressorTexto").textContent = compressorNotes[ct] || "";' +
       '}' +
+      'function enviarChecklistPDF(){' +
+        'var msg="Olá! Segue o checklist de diagnóstico em PDF.";' +
+        'if(window.opener && typeof window.opener.compartilharPDF==="function"){window.opener.compartilharPDF(document.documentElement.outerHTML,"checklist-os-' + (data.osNumero||'') + '.pdf","",msg,"Checklist de Diagnóstico");return;}' +
+        'if(window.AppInventor && typeof window.AppInventor.setWebViewString==="function"){window.AppInventor.setWebViewString(JSON.stringify({action:"SHAREPDF",filename:"checklist-os-' + (data.osNumero||'') + '.pdf",html:document.documentElement.outerHTML,phone:"",message:msg,title:"Checklist de Diagnóstico"}));return;}' +
+        'alert("No navegador, primeiro use “Imprimir / Salvar PDF”. Depois anexe o PDF no WhatsApp.");window.print();' +
+      '}' +
       'document.addEventListener("DOMContentLoaded", function(){ atualizarChecklist(); });' +
       'atualizarChecklist();' +
     ET +
@@ -1349,6 +1379,8 @@
     return html;
   }
   window.gerarChecklistHTML = gerarChecklistHTML;
+  window.compartilharPDF = compartilharPDF;
+  window.makeSimplePDF = makeSimplePDF;
 
   function buildOrcamentoPrintHTML(data){
     var subServicos = (data.items||[]).reduce(function(s,i){return s+(i.qty*i.price);},0);
@@ -1476,6 +1508,7 @@
     '.no-print{display:flex;gap:8px;justify-content:flex-end;margin-bottom:14px;}' +
     '.no-print button{padding:11px 18px;border:none;border-radius:10px;font-weight:700;font-size:13.5px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.12);}' +
     '.btn-print{background:linear-gradient(135deg,#CB9C61,#B5824A);color:#fff;}' +
+    '.btn-wa{background:linear-gradient(135deg,#2CB47F,#1E7A57);color:#fff;}' +
     '.btn-checklist{background:linear-gradient(135deg,var(--steel-400),var(--steel-600));color:#fff;}' +
     '.btn-close{background:#fff;border:1px solid var(--line) !important;color:var(--graphite-900);}' +
     '.sheet{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 12px 30px -10px rgba(18,24,29,.18);}' +
@@ -1511,6 +1544,7 @@
     '<div class="wrap">' +
       '<div class="no-print">' +
         '<button class="btn-checklist" onclick="abrirChecklist()">🧪 Checklist de Diagnóstico A/C</button>' +
+        '<button class="btn-wa" onclick="enviarOSPDF()">📄 Enviar PDF via WhatsApp</button>' +
         '<button class="btn-print" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>' +
         '<button class="btn-close" onclick="window.close()">Fechar aba</button>' +
       '</div>' +
@@ -1580,13 +1614,27 @@
       'function abrirChecklist(){' +
         'try{' +
           'if(window.AppInventor && typeof window.AppInventor.setWebViewString === "function"){' +
-            'window.AppInventor.setWebViewString(JSON.stringify({action:"SAVEHTML", filename:"checklist-os-' + osNumero + '.html", html: CHECKLIST_HTML}));' +
+            'window.AppInventor.setWebViewString(JSON.stringify({action:"SAVEHTML", filename:"checklist-os-' + osNumero + '.html", html: CHECKLIST_HTML, openAfterSave:true}));' +
             'return;' +
           '}' +
+          'var blob=new Blob([CHECKLIST_HTML],{type:"text/html;charset=utf-8"});' +
+          'var url=URL.createObjectURL(blob);' +
+          'var w=window.open(url,"_blank");' +
+          'if(!w){URL.revokeObjectURL(url);alert("Não foi possível abrir a nova aba. Verifique o bloqueador de pop-ups.");return;}' +
+          'setTimeout(function(){try{URL.revokeObjectURL(url);}catch(e){}},60000);' +
+        '}catch(e){ alert("Não foi possível abrir o checklist: " + e.message); }' +
+      '}'  +
           'var w = window.open("", "_blank");' +
           'if(!w){ alert("Não foi possível abrir a nova aba. Verifique o bloqueador de pop-ups."); return; }' +
           'w.document.open(); w.document.write(CHECKLIST_HTML); w.document.close();' +
         '}catch(e){ alert("Não foi possível abrir o checklist: " + e.message); }' +
+      '}' +
+      'function enviarOSPDF(){' +
+        'var msg="Olá! Segue a Ordem de Serviço nº ' + osNumero + ' em PDF.";' +
+        'var phone="' + (data.cliFone||'').replace(/\D/g,'') + '";' +
+        'if(window.opener && typeof window.opener.compartilharPDF==="function"){window.opener.compartilharPDF(document.documentElement.outerHTML,"os-' + osNumero + '.pdf",phone,msg,"Ordem de Serviço");return;}' +
+        'if(window.AppInventor && typeof window.AppInventor.setWebViewString==="function"){window.AppInventor.setWebViewString(JSON.stringify({action:"SHAREPDF",filename:"os-' + osNumero + '.pdf",html:document.documentElement.outerHTML,phone:phone,message:msg,title:"Ordem de Serviço"}));return;}' +
+        'alert("No navegador, primeiro use “Imprimir / Salvar PDF”. Depois anexe o PDF no WhatsApp.");window.print();' +
       '}' +
     '<' + '/script>' +
     '</body></html>';
