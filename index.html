@@ -1208,7 +1208,6 @@
     '.no-print{display:flex;gap:8px;justify-content:flex-end;margin-bottom:14px;}' +
     '.no-print button{padding:11px 18px;border:none;border-radius:10px;font-weight:700;font-size:13.5px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.12);}' +
     '.btn-print{background:linear-gradient(135deg,#CB9C61,#B5824A);color:#fff;}' +
-    '.btn-wa{background:linear-gradient(135deg,#2CB47F,#1E7A57);color:#fff;}' +
     '.btn-close{background:#fff;border:1px solid var(--line) !important;color:var(--graphite-900);}' +
     '.sheet{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 12px 30px -10px rgba(18,24,29,.18);}' +
     '.head{background:linear-gradient(135deg,var(--graphite-900),var(--graphite-800));color:#fff;padding:20px 22px;}' +
@@ -1508,8 +1507,6 @@
     '.no-print{display:flex;gap:8px;justify-content:flex-end;margin-bottom:14px;}' +
     '.no-print button{padding:11px 18px;border:none;border-radius:10px;font-weight:700;font-size:13.5px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.12);}' +
     '.btn-print{background:linear-gradient(135deg,#CB9C61,#B5824A);color:#fff;}' +
-    '.btn-wa{background:linear-gradient(135deg,#2CB47F,#1E7A57);color:#fff;}' +
-    '.btn-checklist{background:linear-gradient(135deg,var(--steel-400),var(--steel-600));color:#fff;}' +
     '.btn-close{background:#fff;border:1px solid var(--line) !important;color:var(--graphite-900);}' +
     '.sheet{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 12px 30px -10px rgba(18,24,29,.18);}' +
     '.head{background:linear-gradient(135deg,var(--graphite-900),var(--graphite-800));color:#fff;padding:22px 24px;display:flex;align-items:center;gap:14px;}' +
@@ -1543,8 +1540,6 @@
     '</style></head><body>' +
     '<div class="wrap">' +
       '<div class="no-print">' +
-        '<button class="btn-checklist" onclick="abrirChecklist()">🧪 Checklist de Diagnóstico A/C</button>' +
-        '<button class="btn-wa" onclick="enviarOSPDF()">📄 Enviar PDF via WhatsApp</button>' +
         '<button class="btn-print" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>' +
         '<button class="btn-close" onclick="window.close()">Fechar aba</button>' +
       '</div>' +
@@ -1602,41 +1597,7 @@
         '<div class="foot">Ordem de serviço gerada automaticamente a partir do orçamento nº ' + escapeHTML(data.numero) + '.</div>' +
       '</div>' +
     '</div>' +
-    '<' + 'script>' +
-      // O checklist já vem pronto (gerado agora, no app principal) para que o botão
-      // abaixo funcione mesmo quando esta OS é aberta fora do app (ex: compartilhada
-      // pelo Kodular e aberta no Chrome), onde não existe window.opener.
-      'var CHECKLIST_HTML = ' + JSON.stringify(gerarChecklistHTML({
-        cliNome: data.cliNome||'', veiModelo: data.veiModelo||'', veiAno: data.veiAno||'',
-        veiPlaca: data.veiPlaca||'', veiGas: data.veiGas||'', oficinaNome: data.oficinaNome || els.oficinaNome.value || 'Oficina',
-        osNumero: osNumero
-      })) + ';' +
-      'function abrirChecklist(){' +
-        'try{' +
-          'if(window.AppInventor && typeof window.AppInventor.setWebViewString === "function"){' +
-            'window.AppInventor.setWebViewString(JSON.stringify({action:"SAVEHTML", filename:"checklist-os-' + osNumero + '.html", html: CHECKLIST_HTML, openAfterSave:true}));' +
-            'return;' +
-          '}' +
-          'var blob=new Blob([CHECKLIST_HTML],{type:"text/html;charset=utf-8"});' +
-          'var url=URL.createObjectURL(blob);' +
-          'var w=window.open(url,"_blank");' +
-          'if(!w){URL.revokeObjectURL(url);alert("Não foi possível abrir a nova aba. Verifique o bloqueador de pop-ups.");return;}' +
-          'setTimeout(function(){try{URL.revokeObjectURL(url);}catch(e){}},60000);' +
-        '}catch(e){ alert("Não foi possível abrir o checklist: " + e.message); }' +
-      '}'  +
-          'var w = window.open("", "_blank");' +
-          'if(!w){ alert("Não foi possível abrir a nova aba. Verifique o bloqueador de pop-ups."); return; }' +
-          'w.document.open(); w.document.write(CHECKLIST_HTML); w.document.close();' +
-        '}catch(e){ alert("Não foi possível abrir o checklist: " + e.message); }' +
-      '}' +
-      'function enviarOSPDF(){' +
-        'var msg="Olá! Segue a Ordem de Serviço nº ' + osNumero + ' em PDF.";' +
-        'var phone="' + (data.cliFone||'').replace(/\D/g,'') + '";' +
-        'if(window.opener && typeof window.opener.compartilharPDF==="function"){window.opener.compartilharPDF(document.documentElement.outerHTML,"os-' + osNumero + '.pdf",phone,msg,"Ordem de Serviço");return;}' +
-        'if(window.AppInventor && typeof window.AppInventor.setWebViewString==="function"){window.AppInventor.setWebViewString(JSON.stringify({action:"SHAREPDF",filename:"os-' + osNumero + '.pdf",html:document.documentElement.outerHTML,phone:phone,message:msg,title:"Ordem de Serviço"}));return;}' +
-        'alert("No navegador, primeiro use “Imprimir / Salvar PDF”. Depois anexe o PDF no WhatsApp.");window.print();' +
-      '}' +
-    '<' + '/script>' +
+
     '</body></html>';
   }
 
