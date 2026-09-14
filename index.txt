@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Orçamentos e Ordem de Serviço</title>
+  <style>
+    :root {
+      --steel-100: #F0F4F8;
+      --steel-600: #334E68;
+      --ease: cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0; 
+      padding: 20px;
+      background: #f4f7f6;
+      color: #333;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: #fff;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+    }
+
+    h1 { 
+      font-size: 22px; 
+      margin-top: 0; 
+      color: var(--steel-600);
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    
+    .section-title {
+      font-size: 14px; 
+      margin-bottom: 10px; 
+      font-weight: bold;
+      color: #555;
+    }
+
+    /* ---------- Quick add chips (Abinhas) ---------- */
+    .chip-row {
+      display: flex; 
+      flex-wrap: nowrap; /* Impede quebra de linha */
+      overflow-x: auto; /* Rolagem horizontal */
+      gap: 7px; 
+      margin-bottom: 20px;
+      padding-bottom: 8px; /* Espaço da barra de rolagem */
+      -webkit-overflow-scrolling: touch; /* Rolagem suave mobile */
+    }
+    
+    /* Estilizando a barra de rolagem horizontal */
+    .chip-row::-webkit-scrollbar { height: 5px; }
+    .chip-row::-webkit-scrollbar-thumb { background: #d1d8e0; border-radius: 4px; }
+    
+    .chip {
+      background: var(--steel-100); 
+      border: 1px solid #C7DEE6; 
+      color: var(--steel-600);
+      font-size: 13px; 
+      padding: 8px 14px; 
+      border-radius: 20px; 
+      cursor: pointer;
+      font-weight: 700; 
+      line-height: 1.2;
+      white-space: nowrap; /* Impede quebra de texto */
+      flex-shrink: 0; /* Protege botão de ser esmagado */
+      transition: transform .12s var(--ease), background .15s var(--ease);
+    }
+    
+    .chip:active {
+      transform: scale(0.95);
+      background: #e2e8f0;
+    }
+    
+    /* ---------- Lista de Itens ---------- */
+    #itemsContainer {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .item-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      background: #fafafa;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #eee;
+    }
+
+    .item-row input {
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .item-row input:focus {
+      border-color: #a0aec0;
+    }
+
+    .input-desc { flex: 1; min-width: 120px; }
+    .input-price { width: 80px; text-align: center; }
+    .input-qty { width: 50px; text-align: center; }
+
+    .btn-remove {
+      background: #ffe3e3;
+      color: #e53e3e;
+      border: none;
+      padding: 10px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.2s;
+    }
+
+    .btn-remove:hover { background: #feb2b2; }
+
+    .btn-add {
+      background: #3182ce;
+      color: white;
+      border: none;
+      padding: 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      width: 100%;
+      font-size: 15px;
+      margin-bottom: 24px;
+      transition: background 0.2s;
+    }
+
+    .btn-add:hover { background: #2b6cb0; }
+
+    .total-container {
+      background: var(--steel-100);
+      padding: 16px;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 18px;
+    }
+
+    .total-container strong {
+      font-size: 22px;
+      color: var(--steel-600);
+    }
+
+    /* ---------- Rodapé ---------- */
+    footer {
+      text-align: center;
+      font-size: 12px;
+      color: #888;
+      margin-top: 30px;
+      border-top: 1px solid #eee;
+      padding-top: 20px;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Criar Novo Orçamento</h1>
+    
+    <div class="section-title">Adição Rápida:</div>
+    <div class="chip-row">
+      <!-- Você pode alterar os nomes e preços padrão aqui -->
+      <div class="chip" onclick="addChipItem('Troca de Óleo', 120.00)">Troca de Óleo</div>
+      <div class="chip" onclick="addChipItem('Alinhamento', 80.00)">Alinhamento</div>
+      <div class="chip" onclick="addChipItem('Balanceamento', 60.00)">Balanceamento</div>
+      <div class="chip" onclick="addChipItem('Limpeza de Bico', 150.00)">Limpeza de Bico</div>
+      <div class="chip" onclick="addChipItem('Revisão Geral', 250.00)">Revisão Geral</div>
+    </div>
+
+    <div class="section-title">Itens do Orçamento:</div>
+    <div id="itemsContainer"></div>
+
+    <button class="btn-add" onclick="addNewItem()">+ Adicionar Item Manual</button>
+
+    <div class="total-container">
+      <span>Valor Total:</span>
+      <strong>R$ <span id="totalValue">0,00</span></strong>
+    </div>
+
+    <footer>
+      Orçamentos salvos ficam guardados neste aparelho.<br><br>
+      <strong>DESENVOLVIDO POR Philipe Souza</strong>
+    </footer>
+  </div>
+
+  <script>
+    // Array que armazena os serviços/peças
+    let items = [];
+
+    // Função disparada ao clicar nas "Abinhas"
+    function addChipItem(desc, price) {
+      items.push({ desc: desc, price: price, qty: 1 });
+      renderItemsList();
+    }
+
+    // Função disparada no botão "Adicionar Item Manual"
+    function addNewItem() {
+      items.push({ desc: '', price: '', qty: 1 });
+      renderItemsList();
+    }
+
+    // Remove a linha selecionada
+    function removeItem(index) {
+      items.splice(index, 1);
+      renderItemsList();
+    }
+
+    // Calcula o valor total
+    function applyQtyRule() {
+      let total = 0;
+      items.forEach(item => {
+        let p = parseFloat(item.price) || 0;
+        let q = parseInt(item.qty) || 1;
+        total += (p * q);
+      });
+      // Formata para o padrão brasileiro (vírgula para centavos)
+      document.getElementById('totalValue').textContent = total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    // Renderiza a lista na tela
+    function renderItemsList() {
+      const container = document.getElementById('itemsContainer');
+      container.innerHTML = '';
+
+      items.forEach((item, index) => {
+        var row = document.createElement('div');
+        row.className = 'item-row';
+
+        // LÓGICA DO PASSO 2: Condição para exibir Texto ou Campo de Digitação
+        if (item.desc && item.desc.trim() !== '') {
+          // Se tem descrição (veio do botão rápido), mostra apenas o texto
+          var dText = document.createElement('div');
+          dText.style.fontSize = '14px';
+          dText.style.fontWeight = '600';
+          dText.style.flex = '1';
+          dText.style.color = '#334E68';
+          dText.textContent = item.desc;
+          row.appendChild(dText);
+        } else {
+          // Se não tem descrição (veio do item manual), exibe input
+          var dInput = document.createElement('input');
+          dInput.type = 'text'; 
+          dInput.className = 'input-desc';
+          dInput.placeholder = 'Descrição...';
+          dInput.value = item.desc;
+          dInput.addEventListener('input', function(){ 
+            item.desc = dInput.value; 
+          });
+          row.appendChild(dInput);
+        }
+
+        // Input Preço
+        var pInput = document.createElement('input');
+        pInput.type = 'number';
+        pInput.className = 'input-price';
+        pInput.placeholder = 'R$';
+        pInput.value = item.price;
+        pInput.addEventListener('input', function(){
+          item.price = pInput.value;
+          applyQtyRule();
+        });
+        row.appendChild(pInput);
+
+        // Input Quantidade
+        var qInput = document.createElement('input');
+        qInput.type = 'number';
+        qInput.className = 'input-qty';
+        qInput.min = '1';
+        qInput.value = item.qty;
+        qInput.addEventListener('input', function(){
+          item.qty = qInput.value;
+          applyQtyRule();
+        });
+        row.appendChild(qInput);
+
+        // Botão X
+        var rmBtn = document.createElement('button');
+        rmBtn.className = 'btn-remove';
+        rmBtn.textContent = '✕';
+        rmBtn.onclick = function() { removeItem(index); };
+        row.appendChild(rmBtn);
+
+        container.appendChild(row);
+      });
+
+      applyQtyRule();
+    }
+
+    // Adiciona uma linha vazia assim que o site carrega
+    window.onload = function() {
+      addNewItem();
+    };
+  </script>
+</body>
+</html>
