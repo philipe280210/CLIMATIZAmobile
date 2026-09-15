@@ -7,10 +7,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#1C242C">
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="icons/icon-192.png">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
 <title>ClimatizaCar — Orçamentos</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
   :root{
     --graphite-950:#0D1216;
@@ -271,64 +270,46 @@
   .empty-note{padding:16px 14px; font-size:13px; color:var(--ink-soft); text-align:center;}
 
   footer{text-align:center; font-size:11px; color:var(--ink-soft); padding:24px 14px 4px;}
+  footer .credit{display:block; margin-top:6px; font-size:10.5px; color:var(--ink-soft); opacity:.75; letter-spacing:.02em;}
 
-  /* ---------- Mobile & tablet optimizations ---------- */
-  button, .chip, .tab-btn, .saved-item, .item-row .rm{-webkit-tap-highlight-color:transparent; touch-action:manipulation;}
-
-  @media (max-width:600px){
-    body{padding-bottom:calc(48px + env(safe-area-inset-bottom, 0px));}
-    main{padding:0 10px;}
-    header.app-head{padding:18px 14px 24px; border-radius:0 0 18px 18px;}
-    .head-row{gap:10px;}
-    .snow-icon{width:28px; height:28px;}
-    :root{--logo-h:64px;}
-    .logo-img{max-width:180px; padding:5px 7px;}
-    .head-titles input{font-size:17px;}
-    .head-titles .sub{font-size:11px;}
-    .head-sub-row{grid-template-columns:1fr; gap:8px;}
-    .head-sub-row input{font-size:16px; padding:10px 11px;}
-    main{max-width:100%;}
-    .card{border-radius:var(--radius-m); margin-top:12px;}
-    .card-body{padding:14px;}
-    .field-grid{grid-template-columns:1fr; gap:10px;}
-    .field input, .field select, .field textarea{font-size:16px; padding:11px 12px;}
-    .chip-row{gap:8px;}
-    .chip{padding:9px 13px; font-size:13px; min-height:36px; display:inline-flex; align-items:center;}
-    .tabs-row{padding:10px 12px 0; gap:6px;}
-    .tab-btn{padding:12px 6px; font-size:12px; min-height:40px;}
-    .tab-pane{padding:12px 10px 12px;}
-    .items-head, .item-row{grid-template-columns:1fr 38px 62px 62px 26px; gap:5px;}
-    .items-head{font-size:9.5px;}
-    .item-row input{font-size:16px; padding:9px 7px; border-radius:7px;}
-    .item-row .rm{font-size:20px; min-width:26px; min-height:26px;}
-    .add-item-btn{padding:13px; font-size:13.5px;}
-    .totals{padding:14px; }
-    .totals-row.discount input{font-size:16px; width:100px;}
-    .totals-row.grand{font-size:17px; padding:13px 14px;}
-    .totals-row.grand .val{font-size:20px;}
-    .action-bar{grid-template-columns:1fr; gap:9px;}
-    .btn{padding:15px 12px; font-size:14.5px; min-height:48px;}
-    .btn-full{grid-column:auto;}
-    .saved-item{padding:13px 14px;}
-    .field textarea.obs-box{min-height:110px;}
+  /* ---------- Responsivo (celular e tablet) ---------- */
+  body{
+    padding-bottom:calc(48px + env(safe-area-inset-bottom));
   }
-
-  @media (min-width:601px) and (max-width:900px){
-    main{max-width:88%;}
-    header.app-head{padding:26px 26px 32px;}
-    .field-grid{grid-template-columns:1fr 1fr;}
-    .card-body{padding:20px;}
-    .action-bar{grid-template-columns:1fr 1fr;}
-    .btn{padding:15px 12px; font-size:14px; min-height:48px;}
+  header.app-head{
+    padding-top:calc(24px + env(safe-area-inset-top));
+    padding-left:calc(18px + env(safe-area-inset-left));
+    padding-right:calc(18px + env(safe-area-inset-right));
   }
-
-  @media (min-width:901px){
+  main{
+    padding-left:calc(14px + env(safe-area-inset-left));
+    padding-right:calc(14px + env(safe-area-inset-right));
+  }
+  /* evita zoom automático ao focar campos no iOS (exige font-size >=16px) */
+  @media (max-width:900px){
+    .field input, .field select, .field textarea,
+    .item-row input, .head-sub-row input, .head-titles input,
+    .totals-row.discount input, .logo-size-row input{ font-size:16px; }
+  }
+  /* tablets: um pouco mais de respiro */
+  @media (min-width:600px) and (max-width:1024px){
     main{max-width:820px;}
   }
-
-  @media (hover:none) and (pointer:coarse){
-    .btn, .chip, .tab-btn, .add-item-btn, .saved-item, .item-row .rm{min-height:40px;}
+  /* celulares pequenos: compacta colunas fixas e empilha ações */
+  @media (max-width:400px){
+    main{padding-left:10px; padding-right:10px;}
+    .card-body{padding:13px;}
+    .items-head, .item-row{grid-template-columns: 1fr 32px 60px 60px 22px; gap:4px;}
+    .items-head span{font-size:9.5px;}
+    .item-row input{font-size:13px; padding:8px 6px;}
+    .action-bar{grid-template-columns:1fr;}
+    .btn{padding:13px 10px;}
+    .field-grid{grid-template-columns:1fr;}
+    .logo-img{max-width:180px;}
   }
+  /* garante alvo de toque confortável em qualquer tamanho de tela */
+  .btn, .chip, .tab-btn, .add-item-btn{ min-height:40px; }
+  input, select, textarea, button{ -webkit-tap-highlight-color:transparent; }
 
   /* ---------- Print ---------- */
   @page{ size:A4; margin:8mm; }
@@ -559,7 +540,7 @@
 
   <div class="action-bar">
     <button class="btn btn-primary btn-full" id="btnPdf">🖨️ Gerar PDF / Imprimir</button>
-    <button class="btn btn-wa" id="btnWpp">📄 Enviar PDF via WhatsApp</button>
+    <button class="btn btn-wa" id="btnWpp">📲 Enviar por WhatsApp</button>
     <button class="btn btn-dark" id="btnSave">💾 Salvar orçamento</button>
     <button class="btn btn-approve btn-full" id="btnAprovado">✅ Cliente aprovou o serviço?</button>
     <button class="btn btn-ghost btn-full" id="btnNew">＋ Novo orçamento em branco</button>
@@ -570,7 +551,7 @@
     <div id="savedList"></div>
   </div>
 
-  <footer>Orçamentos salvos ficam guardados neste aparelho.</footer>
+  <footer>Orçamentos salvos ficam guardados neste aparelho.<br><span class="credit">Criado por Philipe Pereira de Souza</span></footer>
 </main>
 
 <script>
@@ -609,7 +590,7 @@
     {d:'Troca de filtro de ar cabine', p:60},
     {d:'Diagnóstico do sistema', p:70},
     {d:'Aplicação de contraste UV', p:40},
-    {d:'Reparo elétrico', p:150},
+    {d:'Serviço de elétrica', p:100},
     {d:'Serviço de solda', p:120},
     {d:'Deslocamento', p:0},
     {d:'Mão de obra', p:0},
@@ -1044,21 +1025,144 @@
   });
 
   els.btnPdf.addEventListener('click', function(){
-    if(isKodularApp()){
-      var data = collectData();
-      var html = buildOrcamentoPrintHTML(data);
-      kodularShareHtml(html, 'orcamento-' + (data.numero||'novo') + '.html');
-    } else {
-      window.print();
-    }
+    window.print();
   });
+
+  function montarResumoWhats(data){
+    var lines = [];
+    lines.push((els.oficinaNome.value||'Oficina') + ' — Orçamento nº ' + data.numero);
+    if(data.cliNome) lines.push('Cliente: ' + data.cliNome);
+    if(data.veiModelo) lines.push('Veículo: ' + data.veiModelo + (data.veiAno?(' '+data.veiAno):'') + (data.veiPlaca?(' - '+data.veiPlaca):''));
+    var sub = subtotal();
+    lines.push('Total: ' + fmt(Math.max(0, sub-data.desconto)));
+    if(data.validade) lines.push('Válido até: ' + data.validade);
+    lines.push('');
+    lines.push('Orçamento em PDF em anexo.');
+    return lines.join('\n');
+  }
+
+  function gerarPDFOrcamento(data){
+    var jsPDFCtor = window.jspdf && window.jspdf.jsPDF;
+    if(!jsPDFCtor) return null;
+    var doc = new jsPDFCtor({ unit:'mm', format:'a4' });
+    var pageW = doc.internal.pageSize.getWidth();
+    var margin = 14;
+    var y = 18;
+
+    var oficinaNome = els.oficinaNome.value || 'Oficina';
+    var oficinaFone = els.oficinaFone.value || '';
+    var oficinaCnpj = els.oficinaCnpj.value || '';
+    var oficinaEnd = els.oficinaEnd.value || '';
+
+    doc.setFont('helvetica','bold'); doc.setFontSize(15);
+    doc.text(oficinaNome, margin, y);
+    y += 6;
+    doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(90,100,108);
+    var contato = [oficinaFone?('Tel/WhatsApp: '+oficinaFone):'', oficinaCnpj?('CNPJ: '+oficinaCnpj):'', oficinaEnd?('Endereço: '+oficinaEnd):''].filter(Boolean).join('   ·   ');
+    if(contato){ doc.text(contato, margin, y, {maxWidth: pageW-margin*2}); y += 6; }
+    doc.setTextColor(30,37,41);
+    doc.setDrawColor(220,228,232); doc.line(margin, y, pageW-margin, y); y += 8;
+
+    doc.setFont('helvetica','bold'); doc.setFontSize(13);
+    doc.text('ORÇAMENTO Nº ' + data.numero, margin, y);
+    doc.setFont('helvetica','normal'); doc.setFontSize(9.5);
+    doc.text('Data: ' + (data.data||'—') + (data.validade?('   ·   Válido até: '+data.validade):''), pageW-margin, y, {align:'right'});
+    y += 8;
+
+    doc.setFont('helvetica','bold'); doc.setFontSize(10);
+    doc.text('Cliente e veículo', margin, y); y += 5;
+    doc.setFont('helvetica','normal'); doc.setFontSize(9.5);
+    var infoCli = [
+      'Cliente: ' + (data.cliNome||'—'),
+      'Telefone: ' + (data.cliFone||'—'),
+      (data.cliTipo==='CNPJ'?'CNPJ: ':'CPF: ') + (data.cliDoc||'—'),
+      'Veículo: ' + (data.veiModelo||'—') + (data.veiAno?(' '+data.veiAno):'') + (data.veiPlaca?(' - '+data.veiPlaca):''),
+      'Refrigerante: ' + (data.veiGas||'—')
+    ];
+    infoCli.forEach(function(t){ doc.text(t, margin, y); y += 5; });
+    if(data.cliEndereco){ doc.text('Endereço: ' + data.cliEndereco, margin, y, {maxWidth: pageW-margin*2}); y += 5; }
+    y += 2;
+
+    function tabelaItens(titulo, list){
+      var rows = (list||[]).filter(function(i){return i.desc;}).map(function(i){
+        return [i.desc, String(i.qty), fmt(i.price), fmt(i.qty*i.price)];
+      });
+      if(!rows.length) return;
+      doc.setFont('helvetica','bold'); doc.setFontSize(10);
+      doc.text(titulo, margin, y); y += 2;
+      doc.autoTable({
+        startY: y,
+        margin: {left: margin, right: margin},
+        head: [['Descrição','Qtd','Unit.','Total']],
+        body: rows,
+        theme: 'grid',
+        styles: { font:'helvetica', fontSize:9, cellPadding:2.2, textColor:[30,37,41] },
+        headStyles: { fillColor:[228,239,243], textColor:[46,110,142], fontStyle:'bold' },
+        columnStyles: { 1:{halign:'center', cellWidth:16}, 2:{halign:'right', cellWidth:26}, 3:{halign:'right', cellWidth:26} }
+      });
+      y = doc.lastAutoTable.finalY + 6;
+    }
+    tabelaItens('Serviços', data.items);
+    tabelaItens('Peças', data.pecas);
+
+    var sub = subtotal();
+    var total = Math.max(0, sub - (data.desconto||0));
+    if(y > 260){ doc.addPage(); y = 18; }
+    doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(90,100,108);
+    doc.text('Subtotal serviços: ' + fmt(subtotalServicos()), pageW-margin, y, {align:'right'}); y += 5;
+    doc.text('Subtotal peças: ' + fmt(subtotalPecas()), pageW-margin, y, {align:'right'}); y += 5;
+    if(data.desconto){ doc.text('Desconto: -' + fmt(data.desconto), pageW-margin, y, {align:'right'}); y += 5; }
+    doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(181,130,74);
+    doc.text('Total: ' + fmt(total), pageW-margin, y, {align:'right'}); y += 9;
+    doc.setTextColor(30,37,41);
+
+    if(data.obs){
+      if(y > 250){ doc.addPage(); y = 18; }
+      doc.setFont('helvetica','bold'); doc.setFontSize(10);
+      doc.text('Observações', margin, y); y += 5;
+      doc.setFont('helvetica','normal'); doc.setFontSize(9.5);
+      var obsLines = doc.splitTextToSize(data.obs, pageW-margin*2);
+      doc.text(obsLines, margin, y);
+    }
+
+    return doc;
+  }
 
   els.btnWpp.addEventListener('click', function(){
     var data = collectData();
-    var html = buildOrcamentoPrintHTML(data);
-    var phone = (data.cliFone||'').replace(/\D/g,'');
-    var msg = 'Olá' + (data.cliNome ? ', ' + data.cliNome : '') + '! Segue o orçamento nº ' + (data.numero||'') + ' em PDF.';
-    compartilharPDF(html, 'orcamento-' + (data.numero||'novo') + '.pdf', phone, msg, 'Orçamento');
+    var doc = gerarPDFOrcamento(data);
+    var resumo = montarResumoWhats(data);
+    var nomeArquivo = 'Orcamento_' + data.numero + '.pdf';
+
+    if(!doc){
+      // sem jsPDF disponível (sem internet no primeiro carregamento) — cai para envio por texto
+      var url = (data.cliFone||'').replace(/\D/g,'') ? ('https://wa.me/55'+(data.cliFone||'').replace(/\D/g,'')+'?text='+encodeURIComponent(resumo)) : ('https://wa.me/?text='+encodeURIComponent(resumo));
+      window.open(url, '_blank');
+      return;
+    }
+
+    var blob = doc.output('blob');
+    var arquivo;
+    try{ arquivo = new File([blob], nomeArquivo, {type:'application/pdf'}); }catch(e){ arquivo = null; }
+
+    if(arquivo && navigator.canShare && navigator.canShare({ files:[arquivo] })){
+      navigator.share({ files:[arquivo], title:'Orçamento ' + data.numero, text: resumo })
+        .catch(function(){ /* usuário cancelou o compartilhamento */ });
+    } else {
+      // sem suporte a compartilhar arquivo: baixa o PDF e abre o WhatsApp com o resumo para anexar manualmente
+      var link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = nomeArquivo;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(function(){
+        var phone = (data.cliFone||'').replace(/\D/g,'');
+        var textoAnexo = resumo + '\n\n(PDF baixado — anexe o arquivo ' + nomeArquivo + ' nesta conversa do WhatsApp)';
+        var url = phone ? ('https://wa.me/55'+phone+'?text='+encodeURIComponent(textoAnexo)) : ('https://wa.me/?text='+encodeURIComponent(textoAnexo));
+        window.open(url, '_blank');
+      }, 400);
+    }
   });
 
   // ---------- Ordem de Serviço (após aprovação do cliente) ----------
@@ -1077,83 +1181,6 @@
     });
   }
 
-  // ---------- Integração com app Kodular (WebViewer nativo) ----------
-  // Dentro do app Kodular, o WebViewer injeta o objeto window.AppInventor,
-  // que permite mandar uma mensagem de texto pros Blocks via WebViewString.
-  // Em navegador comum (Chrome/GitHub Pages fora do app) esse objeto não existe,
-  // então o código cai automaticamente no comportamento antigo (window.open/print).
-  function isKodularApp(){
-    return !!(window.AppInventor && typeof window.AppInventor.setWebViewString === 'function');
-  }
-  function kodularSend(obj){
-    window.AppInventor.setWebViewString(JSON.stringify(obj));
-  }
-  // Pede pro app abrir uma URL externamente (ex: WhatsApp) via ActivityStarter nativo
-  function kodularOpenUrl(url){
-    if(!isKodularApp()) return false;
-    kodularSend({ action: 'OPENURL', url: url });
-    return true;
-  }
-  // Pede pro app salvar um HTML como arquivo e abrir o menu de compartilhamento nativo.
-  function kodularShareHtml(html, filename){
-    if(!isKodularApp()) return false;
-    kodularSend({ action: 'SAVEHTML', filename: filename || 'documento.html', html: html });
-    return true;
-  }
-
-  // Compartilha o documento como PDF. No Kodular, os Blocks devem tratar SHAREPDF
-  // convertendo o HTML para PDF e abrindo o compartilhamento nativo (WhatsApp etc.).
-  function compartilharPDF(html, filename, phone, message, titulo){
-    if(isKodularApp()){
-      kodularSend({action:'SHAREPDF',filename:filename||'documento.pdf',html:html,phone:phone||'',message:message||'',title:titulo||'Documento PDF'});
-      return true;
-    }
-    try{
-      var text=htmlToPlainText(html);
-      var blob=makeSimplePDF(text,titulo||'Documento');
-      if(navigator.share && navigator.canShare){
-        var file=new File([blob],filename||'documento.pdf',{type:'application/pdf'});
-        if(navigator.canShare({files:[file]})){
-          navigator.share({files:[file],title:titulo||'Documento PDF',text:message||''}).catch(function(err){
-            if(err && err.name!=='AbortError') abrirImpressaoPDF(html);
-          });
-          return true;
-        }
-      }
-      abrirImpressaoPDF(html);
-      return true;
-    }catch(e){ abrirImpressaoPDF(html); return true; }
-  }
-  function abrirImpressaoPDF(html){
-    var w=abrirHTMLSeguro(html);
-    if(w){setTimeout(function(){try{w.alert('Selecione “Salvar como PDF” e depois envie o arquivo pelo WhatsApp.');}catch(e){}},250);}
-  }
-  function abrirHTMLSeguro(html){
-    try{
-      var blob=new Blob([html],{type:'text/html;charset=utf-8'}),url=URL.createObjectURL(blob),w=window.open(url,'_blank');
-      if(!w){URL.revokeObjectURL(url);alert('Não foi possível abrir a nova aba. Verifique o bloqueador de pop-ups.');return null;}
-      setTimeout(function(){try{URL.revokeObjectURL(url);}catch(e){}},60000); return w;
-    }catch(e){
-      var w2=window.open('', '_blank'); if(!w2)return null; w2.document.open();w2.document.write(html);w2.document.close();return w2;
-    }
-  }
-  function htmlToPlainText(html){
-    try{var doc=new DOMParser().parseFromString(html,'text/html');doc.querySelectorAll('script,style,noscript').forEach(function(el){el.remove();});return (doc.body?doc.body.innerText:html).replace(/\u00a0/g,' ').replace(/^[ \t]+|[ \t]+$/gm,'').replace(/\n{3,}/g,'\n\n').trim();}
-    catch(e){return String(html).replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();}
-  }
-  function pdfEscape(s){return String(s).replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)');}
-  function makeSimplePDF(text,title){
-    var lines=String(text||'').split(/\r?\n/),out=[];
-    lines.forEach(function(line){line=String(line).replace(/\s+$/,'');if(!line){out.push('');return;}while(line.length>92){out.push(line.slice(0,92));line=line.slice(92);}out.push(line);});
-    if(!out.length)out=[title||'Documento'];
-    var pages=[];for(var i=0;i<out.length;i+=48)pages.push(out.slice(i,i+48));
-    var objects=[],offsets=[];function add(o){objects.push(o);return objects.length;}
-    var catalogId=add(''),pagesId=add(''),fontId=add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'),pageIds=[];
-    pages.forEach(function(pg){var content='BT\n/F1 10 Tf\n50 800 Td\n14 TL\n';pg.forEach(function(line,idx){if(idx>0)content+='T*\n';var safe=String(line||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\x20-\x7E]/g,'?');content+='('+pdfEscape(safe)+') Tj\n';});content+='ET';var cid=add('<< /Length '+content.length+' >>\nstream\n'+content+'\nendstream');pageIds.push(add('<< /Type /Page /Parent '+pagesId+' 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 '+fontId+' 0 R >> >> /Contents '+cid+' 0 R >>'));});
-    objects[catalogId-1]='<< /Type /Catalog /Pages '+pagesId+' 0 R >>';objects[pagesId-1]='<< /Type /Pages /Kids ['+pageIds.map(function(id){return id+' 0 R';}).join(' ')+'] /Count '+pageIds.length+' >>';
-    var pdf='%PDF-1.4\n%\xFF\xFF\xFF\xFF\n';objects.forEach(function(obj,idx){offsets[idx+1]=pdf.length;pdf+=(idx+1)+' 0 obj\n'+obj+'\nendobj\n';});var xref=pdf.length;pdf+='xref\n0 '+(objects.length+1)+'\n0000000000 65535 f \n';for(var j=1;j<=objects.length;j++)pdf+=String(offsets[j]).padStart(10,'0')+' 00000 n \n';pdf+='trailer\n<< /Size '+(objects.length+1)+' /Root '+catalogId+' 0 R >>\nstartxref\n'+xref+'\n%%EOF';return new Blob([pdf],{type:'application/pdf'});
-  }
-
   function buildOSRowsHTML(list){
     var rows = (list||[]).filter(function(i){ return i.desc; }).map(function(i){
       return '<tr>' +
@@ -1164,323 +1191,6 @@
         '</tr>';
     }).join('');
     return rows || '<tr><td colspan="4" class="empty">Nenhum item</td></tr>';
-  }
-
-  // ---------- Checklist de diagnóstico de A/C (abre em nova aba a partir da OS) ----------
-  function gaugeBlockHTML(id, label, maxVal, unit){
-    return '<div class="gauge-box">' +
-      '<svg viewBox="0 0 200 130" class="gauge-svg">' +
-        '<path d="M12,112 A88,88 0 0 1 188,112" fill="none" stroke="#DCE4E8" stroke-width="16"/>' +
-        '<line id="' + id + 'needle" x1="100" y1="112" x2="100" y2="34" stroke="#C4453F" stroke-width="4" stroke-linecap="round" transform="rotate(-90 100 112)"></line>' +
-        '<circle cx="100" cy="112" r="7" fill="#1E2529"/>' +
-        '<text x="14" y="126" font-size="9" fill="#5B6870">0</text>' +
-        '<text x="164" y="126" font-size="9" fill="#5B6870">' + maxVal + '</text>' +
-      '</svg>' +
-      '<div class="gauge-label">' + label + '</div>' +
-      '<div class="gauge-val"><input type="number" id="' + id + '" min="0" max="' + maxVal + '" step="1" placeholder="0" oninput="atualizarChecklist()"> <span>' + unit + '</span></div>' +
-    '</div>';
-  }
-  function thermoBlockHTML(){
-    return '<div class="thermo-box">' +
-      '<svg viewBox="0 0 80 210" class="thermo-svg">' +
-        '<rect x="30" y="8" width="20" height="150" rx="10" fill="#fff" stroke="#DCE4E8" stroke-width="2"/>' +
-        '<rect id="thermoFill" x="34" y="148" width="12" height="10" fill="#C4453F"/>' +
-        '<circle cx="40" cy="178" r="17" fill="#fff" stroke="#DCE4E8" stroke-width="2"/>' +
-        '<circle cx="40" cy="178" r="11" fill="#C4453F"/>' +
-      '</svg>' +
-      '<div class="gauge-label">Temp. ambiente local</div>' +
-      '<div class="gauge-val"><input type="number" id="tempAmbiente" min="0" max="55" step="1" placeholder="25" oninput="atualizarChecklist()"> <span>°C</span></div>' +
-    '</div>';
-  }
-  function gerarChecklistHTML(data){
-    data = data || {};
-    var ET = '<' + '/script>';
-    var veic = (escapeHTML(data.veiModelo)||'—') + (data.veiAno ? (' ' + escapeHTML(data.veiAno)) : '') + (data.veiPlaca ? (' · ' + escapeHTML(data.veiPlaca)) : '');
-    var gasAtual = data.veiGas || 'R-134a';
-    var html = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">' +
-    '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
-    '<title>Checklist de Diagnóstico A/C — ' + veic + '</title>' +
-    '<style>' +
-    ':root{--ink:#1E2529;--ink-soft:#5B6870;--line:#DCE4E8;--steel-600:#2E6E8E;--steel-500:#3B87AC;--steel-100:#E4EFF3;--brass-500:#B5824A;--graphite-900:#171F26;--graphite-800:#242E37;--ok:#2E7D5B;--danger:#C4453F;--warn:#B5824A;}' +
-    '*{box-sizing:border-box;}' +
-    'body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:var(--ink);background:#EEF3F6;}' +
-    '.wrap{max-width:900px;margin:0 auto;padding:18px 16px 60px;}' +
-    '.no-print{display:flex;gap:8px;justify-content:flex-end;margin-bottom:14px;}' +
-    '.no-print button{padding:11px 18px;border:none;border-radius:10px;font-weight:700;font-size:13.5px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.12);}' +
-    '.btn-print{background:linear-gradient(135deg,#CB9C61,#B5824A);color:#fff;}' +
-    '.btn-close{background:#fff;border:1px solid var(--line) !important;color:var(--graphite-900);}' +
-    '.sheet{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 12px 30px -10px rgba(18,24,29,.18);}' +
-    '.head{background:linear-gradient(135deg,var(--graphite-900),var(--graphite-800));color:#fff;padding:20px 22px;}' +
-    '.head h1{margin:0;font-size:17px;letter-spacing:.03em;}' +
-    '.head .sub{font-size:11.5px;color:#B9C7CE;margin-top:4px;line-height:1.5;}' +
-    '.section{padding:16px 22px;border-bottom:1px solid var(--line);}' +
-    '.section h2{margin:0 0 10px;font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--steel-600);font-weight:800;}' +
-    '.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}' +
-    '.field{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;}' +
-    '.field label{font-size:11px;color:var(--ink-soft);font-weight:700;}' +
-    '.field input,.field select,.field textarea{border:1.5px solid var(--line);border-radius:10px;padding:9px 10px;font-size:14px;font-family:inherit;width:100%;}' +
-    '.field textarea{min-height:60px;resize:vertical;}' +
-    '.gauges-row{display:flex;flex-wrap:wrap;gap:18px;justify-content:center;}' +
-    '.gauge-box,.thermo-box{text-align:center;width:150px;}' +
-    '.gauge-svg{width:100%;height:auto;}' +
-    '.thermo-svg{width:70px;height:180px;}' +
-    '.gauge-label{font-size:11px;color:var(--ink-soft);margin-top:2px;}' +
-    '.gauge-val{margin-top:4px;}' +
-    '.gauge-val input{width:64px;text-align:center;border:1.5px solid var(--line);border-radius:8px;padding:5px;font-size:13px;}' +
-    '.ref-box{margin-top:12px;background:#F8FAFB;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:12.5px;color:var(--ink-soft);line-height:1.5;}' +
-    '.speed-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;}' +
-    '.speed-row label{display:flex;align-items:center;gap:5px;font-size:13px;background:var(--steel-100);border-radius:20px;padding:6px 12px;cursor:pointer;}' +
-    '.disclaimer{font-size:10.5px;color:var(--ink-soft);font-style:italic;margin-top:6px;}' +
-    '@media print{ body{background:#fff;} .no-print{display:none;} .wrap{padding:0;max-width:100%;} .sheet{border:none;box-shadow:none;border-radius:0;} .section{page-break-inside:avoid;} }' +
-    '</style></head><body>' +
-    '<div class="wrap">' +
-      '<div class="no-print">' +
-        '<button class="btn-wa" onclick="enviarChecklistPDF()">📄 Enviar PDF via WhatsApp</button>' +
-        '<button class="btn-print" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>' +
-        '<button class="btn-close" onclick="window.close()">Fechar aba</button>' +
-      '</div>' +
-      '<div class="sheet">' +
-        '<div class="head">' +
-          '<h1>Checklist de Diagnóstico do Ar Condicionado</h1>' +
-          '<div class="sub">' + (data.oficinaNome?escapeHTML(data.oficinaNome)+' &nbsp;·&nbsp; ':'') + (data.osNumero?('referente à OS nº '+escapeHTML(data.osNumero)+' &nbsp;·&nbsp; '):'') + 'Cliente: ' + (escapeHTML(data.cliNome)||'—') + ' &nbsp;·&nbsp; Veículo: ' + veic + '</div>' +
-        '</div>' +
-        '<div class="section">' +
-          '<h2>Condição de teste</h2>' +
-          '<div class="grid2">' +
-            '<div class="field"><label>Refrigerante</label><select id="tipoGas" oninput="atualizarChecklist()" onchange="atualizarChecklist()">' +
-              '<option value="R-134a"' + (gasAtual==='R-134a'?' selected':'') + '>R-134a</option>' +
-              '<option value="R-1234yf"' + (gasAtual==='R-1234yf'?' selected':'') + '>R-1234yf</option>' +
-            '</select></div>' +
-            '<div class="field"><label>Motor</label><select id="motorEstado"><option>Marcha lenta</option><option>Rotação elevada (~2000rpm)</option></select></div>' +
-          '</div>' +
-          '<div class="gauges-row">' + thermoBlockHTML() + '</div>' +
-        '</div>' +
-        '<div class="section">' +
-          '<h2>Pressões — veículo desligado (sistema em equilíbrio)</h2>' +
-          '<div class="gauges-row">' +
-            gaugeBlockHTML('baixaDesl','Baixa (equalizada)',150,'psi') +
-            gaugeBlockHTML('altaDesl','Alta (equalizada)',150,'psi') +
-          '</div>' +
-          '<div class="ref-box" id="refDeslTexto">Com o motor desligado, as pressões de alta e baixa tendem a se equalizar e ficam próximas da pressão de saturação do refrigerante na temperatura ambiente.</div>' +
-        '</div>' +
-        '<div class="section">' +
-          '<h2>Pressões — veículo ligado, A/C ligado (regime)</h2>' +
-          '<div class="gauges-row">' +
-            gaugeBlockHTML('baixaLig','Baixa (regime)',150,'psi') +
-            gaugeBlockHTML('altaLig','Alta (regime)',500,'psi') +
-          '</div>' +
-          '<div class="ref-box" id="refLigTexto">Informe a temperatura ambiente e as pressões para gerar uma avaliação de referência.</div>' +
-          '<div class="disclaimer">Valores de referência aproximados, baseados em literatura técnica geral de treinamento automotivo. Consulte sempre o manual/especificação do fabricante do veículo.</div>' +
-        '</div>' +
-        '<div class="section">' +
-          '<h2>Ventoinha do radiador (motor fan)</h2>' +
-          '<div class="field"><select id="ventoinha" onchange="atualizarChecklist()">' +
-            '<option value="nao">Não aciona</option>' +
-            '<option value="uma">Aciona apenas 1 velocidade</option>' +
-            '<option value="pwm">Aciona em velocidade variável (PWM)</option>' +
-          '</select></div>' +
-          '<div class="ref-box" id="refVentoinhaTexto"></div>' +
-        '</div>' +
-        '<div class="section">' +
-          '<h2>Ventilador interno (cabine)</h2>' +
-          '<div class="speed-row">' +
-            '<label><input type="checkbox" id="vint1"> Velocidade 1</label>' +
-            '<label><input type="checkbox" id="vint2"> Velocidade 2</label>' +
-            '<label><input type="checkbox" id="vint3"> Velocidade 3</label>' +
-            '<label><input type="checkbox" id="vint4"> Velocidade 4/Máx</label>' +
-            '<label><input type="checkbox" id="vintAuto"> Modo automático</label>' +
-          '</div>' +
-          '<div class="field"><label>Ruído do motor do ventilador interno</label><select id="vintRuido"><option>Normal</option><option>Ruído anormal (rolamento/atrito)</option><option>Não testado</option></select></div>' +
-        '</div>' +
-        '<div class="section">' +
-          '<h2>Tipo de compressor</h2>' +
-          '<div class="field"><select id="compressorTipo" onchange="atualizarChecklist()">' +
-            '<option value="embreagem">Com embreagem eletromagnética (convencional)</option>' +
-            '<option value="pwm">Deslocamento variável / controlado (PWM, sem embreagem)</option>' +
-            '<option value="fixo">Deslocamento fixo com acionamento elétrico</option>' +
-          '</select></div>' +
-          '<div class="ref-box" id="refCompressorTexto"></div>' +
-        '</div>' +
-        '<div class="section">' +
-          '<h2>Vazamentos e ruídos</h2>' +
-          '<div class="grid2">' +
-            '<div class="field"><label>Vestígios de vazamento</label><select id="vazamento"><option>Não identificado</option><option>Sim — óleo/contraste visível</option><option>Sim — indicado por detector eletrônico</option></select></div>' +
-            '<div class="field"><label>Local do vazamento (se houver)</label><input type="text" id="vazamentoLocal" placeholder="Ex: condensador, mangueira de baixa..."></div>' +
-            '<div class="field"><label>Ruídos anormais</label><select id="ruido"><option>Nenhum</option><option>Compressor</option><option>Correia/polia</option><option>Ventoinha/motor</option><option>Outro</option></select></div>' +
-            '<div class="field"><label>Descrição do ruído</label><input type="text" id="ruidoDesc" placeholder="Detalhe o ruído observado"></div>' +
-          '</div>' +
-        '</div>' +
-        '<div class="section">' +
-          '<h2>Observações gerais</h2>' +
-          '<div class="field"><textarea id="obsGerais" placeholder="Outras observações relevantes..."></textarea></div>' +
-        '</div>' +
-        '<div class="section">' +
-          '<h2>Conclusão do diagnóstico</h2>' +
-          '<div class="field"><textarea id="conclusao" placeholder="Diagnóstico final e serviços recomendados..."></textarea></div>' +
-          '<div class="grid2">' +
-            '<div class="field"><label>Técnico responsável</label><input type="text" id="tecnico"></div>' +
-            '<div class="field"><label>Data</label><input type="date" id="dataDiag"></div>' +
-          '</div>' +
-        '</div>' +
-      '</div>' +
-    '</div>' +
-    '<script>' +
-      'function q(id){return document.getElementById(id);}' +
-      'function numv(id){var v=parseFloat(q(id).value);return isNaN(v)?0:v;}' +
-      'function setNeedle(id,value,maxVal){value=Math.max(0,Math.min(maxVal,value||0));var ang=-90+(value/maxVal)*180;var n=q(id+"needle");if(n){n.setAttribute("transform","rotate("+ang+" 100 112)");}}' +
-      'function setThermo(temp){temp=Math.max(0,Math.min(55,temp||0));var maxH=140;var h=(temp/55)*maxH;var y=148-h;var f=q("thermoFill");if(f){f.setAttribute("y",y);f.setAttribute("height",h+10);}}' +
-      'function refFaixa(t){' +
-        'if(t<20) return {bMin:20,bMax:30,aMin:120,aMax:150};' +
-        'if(t<25) return {bMin:25,bMax:35,aMin:140,aMax:170};' +
-        'if(t<30) return {bMin:30,bMax:40,aMin:170,aMax:210};' +
-        'if(t<35) return {bMin:35,bMax:45,aMin:210,aMax:250};' +
-        'return {bMin:40,bMax:50,aMin:250,aMax:280};' +
-      '}' +
-      'var compressorNotes={' +
-        'embreagem:"Compressor com embreagem eletromagnética: observe o acionamento (ruído de engate), o estado do rolamento da polia e o alinhamento da correia. Ausência de acionamento pode indicar bobina queimada, fusível/relé ou pressostato aberto.",' +
-        'pwm:"Compressor de deslocamento variável (PWM): a pressão de baixa tende a se manter praticamente constante mesmo com variação de rotação/carga térmica. Falhas costumam se manifestar como perda de capacidade sem grande oscilação de pressão.",' +
-        'fixo:"Compressor de deslocamento fixo com acionamento elétrico: verifique alimentação de alta tensão, isolamento do circuito e sinal de comando do módulo eletrônico antes de intervir no sistema."' +
-      '};' +
-      'var ventoinhaNotes={' +
-        'nao:"Ventoinha não aciona: verifique fusível, relé, motor, sensor de temperatura/pressão e o módulo de comando antes de liberar o veículo — o sistema pode operar com pressão de alta elevada.",' +
-        'uma:"Aciona apenas 1 velocidade: aceitável em sistemas simples, mas confirme se corresponde ao projetado para o veículo.",' +
-        'pwm:"Acionamento em velocidade variável (PWM): comportamento esperado nos sistemas atuais; variações bruscas de rotação sem padrão podem indicar módulo ou sensor com falha intermitente."' +
-      '};' +
-      'function atualizarChecklist(){' +
-        'setNeedle("baixaDesl",numv("baixaDesl"),150);' +
-        'setNeedle("altaDesl",numv("altaDesl"),150);' +
-        'setNeedle("baixaLig",numv("baixaLig"),150);' +
-        'setNeedle("altaLig",numv("altaLig"),500);' +
-        'setThermo(numv("tempAmbiente"));' +
-        'var temp=numv("tempAmbiente")||25;' +
-        'var gas=q("tipoGas").value;' +
-        'var fator=(gas==="R-1234yf")?0.85:1;' +
-        'var f=refFaixa(temp);' +
-        'var bMin=Math.round(f.bMin*fator),bMax=Math.round(f.bMax*fator),aMin=Math.round(f.aMin*fator),aMax=Math.round(f.aMax*fator);' +
-        'var txt="Faixa de referência aproximada para "+temp+"°C ambiente ("+gas+"): baixa "+bMin+"-"+bMax+" psi · alta "+aMin+"-"+aMax+" psi.";' +
-        'var bL=numv("baixaLig"),aL=numv("altaLig");' +
-        'if(bL>0){ txt += (bL<bMin) ? " Baixa abaixo do esperado — possível subcarga, restrição ou baixo fluxo de ar no evaporador." : (bL>bMax ? " Baixa acima do esperado — possível sobrecarga ou válvula de expansão aberta demais." : " Baixa dentro da faixa esperada."); }' +
-        'if(aL>0){ txt += (aL<aMin) ? " Alta abaixo do esperado — possível subcarga ou baixa capacidade do compressor." : (aL>aMax ? " Alta acima do esperado — possível excesso de carga, ar no sistema ou condensador obstruído." : " Alta dentro da faixa esperada."); }' +
-        'q("refLigTexto").textContent = txt;' +
-        'var vt=q("ventoinha").value; q("refVentoinhaTexto").textContent = ventoinhaNotes[vt] || "";' +
-        'var ct=q("compressorTipo").value; q("refCompressorTexto").textContent = compressorNotes[ct] || "";' +
-      '}' +
-      'function enviarChecklistPDF(){' +
-        'var msg="Olá! Segue o checklist de diagnóstico em PDF.";' +
-        'if(window.opener && typeof window.opener.compartilharPDF==="function"){window.opener.compartilharPDF(document.documentElement.outerHTML,"checklist-os-' + (data.osNumero||'') + '.pdf","",msg,"Checklist de Diagnóstico");return;}' +
-        'if(window.AppInventor && typeof window.AppInventor.setWebViewString==="function"){window.AppInventor.setWebViewString(JSON.stringify({action:"SHAREPDF",filename:"checklist-os-' + (data.osNumero||'') + '.pdf",html:document.documentElement.outerHTML,phone:"",message:msg,title:"Checklist de Diagnóstico"}));return;}' +
-        'alert("No navegador, primeiro use “Imprimir / Salvar PDF”. Depois anexe o PDF no WhatsApp.");window.print();' +
-      '}' +
-      'document.addEventListener("DOMContentLoaded", function(){ atualizarChecklist(); });' +
-      'atualizarChecklist();' +
-    ET +
-    '</body></html>';
-    return html;
-  }
-  window.gerarChecklistHTML = gerarChecklistHTML;
-  window.compartilharPDF = compartilharPDF;
-  window.makeSimplePDF = makeSimplePDF;
-
-  function buildOrcamentoPrintHTML(data){
-    var subServicos = (data.items||[]).reduce(function(s,i){return s+(i.qty*i.price);},0);
-    var subPecas = (data.pecas||[]).reduce(function(s,i){return s+(i.qty*i.price);},0);
-    var sub = subServicos + subPecas;
-    var total = Math.max(0, sub - (data.desconto||0));
-    var oficinaNome = escapeHTML(els.oficinaNome.value || 'Oficina');
-    var oficinaFone = escapeHTML(els.oficinaFone.value||'');
-    var oficinaCnpj = escapeHTML(els.oficinaCnpj.value||'');
-    var oficinaEnd = escapeHTML(els.oficinaEnd.value||'');
-    var logoSrc = els.oficinaLogo.src || '';
-    var veic = (escapeHTML(data.veiModelo)||'—') + (data.veiAno ? (' ' + escapeHTML(data.veiAno)) : '') + (data.veiPlaca ? (' · ' + escapeHTML(data.veiPlaca)) : '');
-
-    return '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">' +
-    '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
-    '<title>Orçamento nº ' + escapeHTML(data.numero) + ' — ' + oficinaNome + '</title>' +
-    '<style>' +
-    ':root{--ink:#1E2529;--ink-soft:#5B6870;--line:#DCE4E8;--steel-600:#2E6E8E;--steel-100:#E4EFF3;--graphite-900:#171F26;--graphite-800:#242E37;}' +
-    '*{box-sizing:border-box;}' +
-    'body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:var(--ink);background:#EEF3F6;}' +
-    '.wrap{max-width:820px;margin:0 auto;padding:18px 16px 60px;}' +
-    '.no-print{display:flex;gap:8px;justify-content:flex-end;margin-bottom:14px;}' +
-    '.no-print button{padding:11px 18px;border:none;border-radius:10px;font-weight:700;font-size:13.5px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.12);}' +
-    '.btn-print{background:linear-gradient(135deg,#CB9C61,#B5824A);color:#fff;}' +
-    '.btn-close{background:#fff;border:1px solid var(--line) !important;color:var(--graphite-900);}' +
-    '.sheet{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 12px 30px -10px rgba(18,24,29,.18);}' +
-    '.head{background:linear-gradient(135deg,var(--graphite-900),var(--graphite-800));color:#fff;padding:22px 24px;display:flex;align-items:center;gap:14px;}' +
-    '.head img{height:56px;background:#fff;border-radius:8px;padding:4px 6px;object-fit:contain;max-width:180px;}' +
-    '.head .biz-name{font-size:17px;font-weight:800;}' +
-    '.head .biz-meta{font-size:11.5px;color:#B9C7CE;margin-top:3px;line-height:1.5;}' +
-    '.os-banner{display:flex;justify-content:space-between;align-items:center;padding:16px 24px;background:var(--steel-100);border-bottom:1px solid var(--line);}' +
-    '.os-banner h1{margin:0;font-size:18px;letter-spacing:.04em;color:var(--steel-600);text-transform:uppercase;}' +
-    '.os-banner .os-num{font-family:"DejaVu Sans Mono",Consolas,monospace;font-size:14px;color:var(--ink-soft);}' +
-    '.section{padding:16px 24px;border-bottom:1px solid var(--line);}' +
-    '.section h2{margin:0 0 10px;font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--steel-600);font-weight:800;}' +
-    '.grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 22px;font-size:13.5px;}' +
-    '.grid .full{grid-column:1/-1;}' +
-    '.grid b{color:var(--ink-soft);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.03em;display:block;margin-bottom:2px;}' +
-    'table{width:100%;border-collapse:collapse;font-size:13px;}' +
-    'thead th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft);border-bottom:1.5px solid var(--line);padding:6px 4px;}' +
-    'td{padding:8px 4px;border-bottom:1px dashed var(--line);}' +
-    'td.c{text-align:center;} td.r{text-align:right;font-family:"DejaVu Sans Mono",Consolas,monospace;}' +
-    '.totais{margin-top:10px;display:flex;flex-direction:column;align-items:flex-end;gap:4px;font-size:13.5px;}' +
-    '.totais .lin{display:flex;gap:24px;color:var(--ink-soft);}' +
-    '.totais .lin span:last-child{font-family:"DejaVu Sans Mono",Consolas,monospace;color:var(--ink);min-width:100px;text-align:right;}' +
-    '.totais .grand{margin-top:6px;padding:10px 16px;background:linear-gradient(135deg,var(--graphite-900),var(--graphite-800));color:#fff;border-radius:12px;font-weight:800;font-size:17px;display:flex;gap:24px;}' +
-    '.totais .grand span:last-child{color:#CB9C61;font-size:19px;font-family:"DejaVu Sans Mono",Consolas,monospace;min-width:100px;text-align:right;}' +
-    '.obs-box{font-size:13px;white-space:pre-wrap;color:var(--ink);background:#F8FAFB;border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-height:40px;}' +
-    '.foot{padding:14px 24px 20px;text-align:center;font-size:10.5px;color:var(--ink-soft);}' +
-    '@media print{ body{background:#fff;} .no-print{display:none;} .wrap{padding:0;max-width:100%;} .sheet{border:none;box-shadow:none;border-radius:0;} }' +
-    '</style></head><body>' +
-    '<div class="wrap">' +
-      '<div class="no-print">' +
-        '<button class="btn-print" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>' +
-        '<button class="btn-close" onclick="window.close()">Fechar aba</button>' +
-      '</div>' +
-      '<div class="sheet">' +
-        '<div class="head">' +
-          (logoSrc ? '<img src="'+logoSrc+'" alt="logo">' : '') +
-          '<div><div class="biz-name">' + oficinaNome + '</div>' +
-          '<div class="biz-meta">' +
-            (oficinaFone?('Tel/WhatsApp: '+oficinaFone+' &nbsp;·&nbsp; '):'') +
-            (oficinaCnpj?('CNPJ: '+oficinaCnpj+' &nbsp;·&nbsp; '):'') +
-            (oficinaEnd?('Endereço: '+oficinaEnd):'') +
-          '</div></div>' +
-        '</div>' +
-        '<div class="os-banner">' +
-          '<div><h1>Orçamento</h1><div class="os-num">Nº ' + escapeHTML(data.numero) + '</div></div>' +
-        '</div>' +
-        '<div class="section">' +
-          '<h2>Cliente e veículo</h2>' +
-          '<div class="grid">' +
-            '<div><b>Cliente</b>' + (escapeHTML(data.cliNome)||'—') + '</div>' +
-            '<div><b>Telefone</b>' + (escapeHTML(data.cliFone)||'—') + '</div>' +
-            '<div><b>' + (data.cliTipo==='CNPJ'?'CNPJ':'CPF') + '</b>' + (escapeHTML(data.cliDoc)||'—') + '</div>' +
-            '<div><b>Veículo</b>' + veic + '</div>' +
-            (data.cliEndereco ? ('<div class="full"><b>Endereço</b>'+escapeHTML(data.cliEndereco)+'</div>') : '') +
-          '</div>' +
-        '</div>' +
-        '<div class="section">' +
-          '<h2>Serviços</h2>' +
-          '<table><thead><tr><th>Descrição</th><th class="c">Qtd</th><th class="r">Unit.</th><th class="r">Total</th></tr></thead>' +
-          '<tbody>' + buildOSRowsHTML(data.items) + '</tbody></table>' +
-        '</div>' +
-        '<div class="section">' +
-          '<h2>Peças</h2>' +
-          '<table><thead><tr><th>Descrição</th><th class="c">Qtd</th><th class="r">Unit.</th><th class="r">Total</th></tr></thead>' +
-          '<tbody>' + buildOSRowsHTML(data.pecas) + '</tbody></table>' +
-          '<div class="totais">' +
-            '<div class="lin"><span>Subtotal serviços</span><span>' + fmt(subServicos) + '</span></div>' +
-            '<div class="lin"><span>Subtotal peças</span><span>' + fmt(subPecas) + '</span></div>' +
-            (data.desconto ? ('<div class="lin"><span>Desconto</span><span>-' + fmt(data.desconto) + '</span></div>') : '') +
-            '<div class="grand"><span>Total</span><span>' + fmt(total) + '</span></div>' +
-          '</div>' +
-        '</div>' +
-        (data.validade ? ('<div class="section"><h2>Validade</h2><div class="obs-box">Válido até ' + escapeHTML(data.validade) + '</div></div>') : '') +
-        (data.obs ? ('<div class="section"><h2>Observações</h2><div class="obs-box">' + escapeHTML(data.obs) + '</div></div>') : '') +
-        '<div class="foot">Orçamento gerado pelo aplicativo ' + oficinaNome + '.</div>' +
-      '</div>' +
-    '</div>' +
-    '</body></html>';
   }
 
   function buildOrdemServicoHTML(data, osNumero){
@@ -1597,7 +1307,6 @@
         '<div class="foot">Ordem de serviço gerada automaticamente a partir do orçamento nº ' + escapeHTML(data.numero) + '.</div>' +
       '</div>' +
     '</div>' +
-
     '</body></html>';
   }
 
@@ -1624,19 +1333,14 @@
     osList.push({ id: 'os_' + Date.now(), numero: osNumero, orcamentoId: data.id, orcamentoNumero: data.numero, cliNome: data.cliNome, total: Math.max(0, subtotal()-data.desconto), createdAt: new Date().toISOString() });
     setAllOS(osList);
 
-    var osHtml = buildOrdemServicoHTML(data, osNumero);
-    if(isKodularApp()){
-      kodularShareHtml(osHtml, 'os-' + osNumero + '.html');
-    } else {
-      var novaAba = window.open('', '_blank');
-      if(!novaAba){
-        alert('Não foi possível abrir a nova aba. Verifique se o bloqueador de pop-ups está ativo e permita para este site.');
-        return;
-      }
-      novaAba.document.open();
-      novaAba.document.write(osHtml);
-      novaAba.document.close();
+    var novaAba = window.open('', '_blank');
+    if(!novaAba){
+      alert('Não foi possível abrir a nova aba. Verifique se o bloqueador de pop-ups está ativo e permita para este site.');
+      return;
     }
+    novaAba.document.open();
+    novaAba.document.write(buildOrdemServicoHTML(data, osNumero));
+    novaAba.document.close();
   });
 
   // init
@@ -1645,15 +1349,6 @@
   renderChips();
   newBlank();
   renderSaved();
-
-  // Registra o service worker (permite instalar o app / funcionar offline)
-  if('serviceWorker' in navigator){
-    window.addEventListener('load', function(){
-      navigator.serviceWorker.register('service-worker.js').catch(function(err){
-        console.log('Falha ao registrar service worker:', err);
-      });
-    });
-  }
 })();
 </script>
 </body>
